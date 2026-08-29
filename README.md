@@ -3,7 +3,9 @@
 A tiny arcade game for the **LILYGO TTGO T-Display** (ESP32 + 1.14" ST7789 240×135 TFT).
 Hold it phone-style (USB-C at the bottom) and catch the falling dot with the bar.
 
-![game](docs/screenshot.jpg) <!-- optional: add a photo -->
+<p align="center">
+  <img src="docs/drew-game.png" alt="Drew Game running on a TTGO T-Display" width="420">
+</p>
 
 ## Gameplay
 - The dot drops from the top and bounces off the side walls.
@@ -55,6 +57,25 @@ arduino-cli upload  --fqbn esp32:esp32:esp32 --port <YOUR_PORT> DrewGame
 ## Tweaks
 All the knobs are constants at the top of `DrewGame/DrewGame.ino`:
 `BAR_W`, `BAR_SPEED`, `BALL_R`, `ballSpeed()` (difficulty ramp), starting `lives`.
+
+## Ideas to build on (PRs welcome! 🎉)
+Fork it and take it further — some fun directions:
+
+- **Combo multiplier** — reward consecutive catches; the streak resets on a miss,
+  and the score ramps faster the longer you keep it alive.
+- **Bad dots to dodge** — mix in red "bad" dots; catching one costs a life (or
+  ends a combo). Now the bar has to *dodge* as well as catch.
+- **Difficulty visuals** — make the rising speed *feel* real: shrink the bar as
+  the score climbs, add a motion trail on the ball, or shift the background hue
+  with the pace.
+- **Power-ups** — a rare golden dot that widens the bar, adds a life, or freezes
+  time for a few seconds.
+- **Two dots at once** once you're good enough, or a **level system** with
+  a short "Level 2!" flash.
+- **Sound** — wire a small piezo buzzer for blips on catch / miss / game over.
+- **Local 2-player** — second paddle at the top, pass the device back and forth.
+
+If you build something cool, open a PR — happy to feature it here.
 
 ## License
 MIT — do whatever you like. Have fun.

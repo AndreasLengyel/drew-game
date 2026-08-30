@@ -32,6 +32,11 @@ int score = 0, lives = 3, highScore = 0;
 bool prevBoth = false;
 uint32_t f = 0;
 
+// pause "DVD logo" screensaver
+const int LOGO_W = 100, LOGO_H = 42;
+float pLogoX, pLogoY, pVX, pVY, pHue;
+int pPrevX, pPrevY;
+
 uint16_t hsv565(float h, float s, float v) {
   h = fmodf(h, 360.0f); if (h < 0) h += 360.0f;
   float c = v * s, x = c * (1 - fabsf(fmodf(h / 60.0f, 2) - 1)), m = v - c;
@@ -79,10 +84,52 @@ void drawCentered(const char *s, int y, int size, uint16_t color) {
   tft.drawString(s, SCR_W / 2, y);
 }
 
-void drawPausedScreen() {
-  drawCentered("PAUSED", 110, 3, TFT_CYAN);
-  drawCentered("hold both", 150, 1, TFT_DARKGREY);
-  drawCentered("to resume", 162, 1, TFT_DARKGREY);
+// The mythical perfect corner: rapid colour flashes + confetti + "PERFECT CORNER!"
+void celebrateCorner() {
+  for (int k = 0; k < 4; k++) { tft.fillScreen(hsv565(random(0, 360), 1.0f, 1.0f)); delay(55); }
+  for (int frame = 0; frame < 30; frame++) {
+    tft.fillScreen(TFT_BLACK);
+    for (int i = 0; i < 70; i++)
+      tft.fillCircle(random(0, SCR_W), random(0, SCR_H), random(2, 5),
+                     hsv565(random(0, 360), 1.0f, 1.0f));
+    tft.setTextFont(1); tft.setTextDatum(MC_DATUM);
+    tft.setTextSize(3); tft.setTextColor(hsv565(frame * 22.0f, 1.0f, 1.0f), TFT_BLACK);
+    tft.drawString("PERFECT", SCR_W / 2, SCR_H / 2 - 14);
+    tft.setTextSize(2); tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.drawString("CORNER!", SCR_W / 2, SCR_H / 2 + 16);
+    delay(40);
+  }
+  tft.fillScreen(TFT_BLACK);
+  pPrevX = (int)pLogoX; pPrevY = (int)pLogoY;   // don't erase a stale rect next frame
+}
+
+// Bouncing "DREW IS THE BEST" logo, Pioneer-DVD-screensaver style: drifts
+// slowly, ricochets off the edges, changes colour on every bounce, and throws
+// a party if it ever nails a corner.
+void animatePause() {
+  tft.fillRect(pPrevX, pPrevY, LOGO_W, LOGO_H, TFT_BLACK);   // erase old
+  pLogoX += pVX; pLogoY += pVY;
+  bool hitX = false, hitY = false;
+  if (pLogoX < 0)              { pLogoX = 0;              pVX = -pVX; hitX = true; }
+  if (pLogoX > SCR_W - LOGO_W) { pLogoX = SCR_W - LOGO_W; pVX = -pVX; hitX = true; }
+  if (pLogoY < 0)              { pLogoY = 0;              pVY = -pVY; hitY = true; }
+  if (pLogoY > SCR_H - LOGO_H) { pLogoY = SCR_H - LOGO_H; pVY = -pVY; hitY = true; }
+  if (hitX || hitY) pHue += 53;
+
+  // corner = both axes bounce together, or one bounces while snug against the other edge
+  const int CT = 8;
+  bool nearX = (pLogoX <= CT) || (pLogoX >= SCR_W - LOGO_W - CT);
+  bool nearY = (pLogoY <= CT) || (pLogoY >= SCR_H - LOGO_H - CT);
+  if ((hitX && hitY) || (hitX && nearY) || (hitY && nearX)) { celebrateCorner(); return; }
+
+  pPrevX = (int)pLogoX; pPrevY = (int)pLogoY;
+
+  uint16_t col = hsv565(pHue, 1.0f, 1.0f);
+  int cx = (int)pLogoX + LOGO_W / 2;
+  tft.setTextFont(1); tft.setTextSize(2); tft.setTextDatum(MC_DATUM);
+  tft.setTextColor(col, TFT_BLACK);
+  tft.drawString("DREW IS", cx, (int)pLogoY + 11);
+  tft.drawString("THE BEST", cx, (int)pLogoY + 31);
 }
 
 void drawGameOverScreen() {
@@ -125,13 +172,19 @@ void loop() {
   // on state change, repaint the screen once
   if (state != prevState) {
     tft.fillScreen(TFT_BLACK);
-    if (state == PAUSED) drawPausedScreen();
-    else if (state == GAMEOVER) drawGameOverScreen();
+    if (state == PAUSED) {
+      pLogoX = (SCR_W - LOGO_W) / 2; pLogoY = (SCR_H - LOGO_H) / 2;
+      pVX = 0.8f; pVY = 1.0f; pHue = random(0, 360);
+      pPrevX = (int)pLogoX; pPrevY = (int)pLogoY;
+    } else if (state == GAMEOVER) {
+      drawGameOverScreen();
+    }
     barPrevX = barX; ballPrevX = (int)ballX; ballPrevY = (int)ballY;
     prevState = state;
   }
 
-  if (state != PLAYING) { delay(30); return; }  // frozen; wait for both-press
+  if (state == PAUSED)   { animatePause(); delay(25); return; }  // screensaver
+  if (state == GAMEOVER) { delay(30); return; }                 // static screen
 
   drawHud();
 

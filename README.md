@@ -13,6 +13,8 @@ Hold it phone-style (USB-C at the bottom) and catch the falling dot with the bar
 - Each catch scores a point and the dot **speeds up**.
 - You have **3 lives**; miss 3 dots and it's **GAME OVER**.
 - Your **high score is saved to flash** (survives power-off).
+- **Pause** to launch a bouncing **"DREW IS THE BEST"** DVD-style screensaver —
+  and if the logo ever nails a perfect corner, you get a confetti celebration. 🎉
 
 ## Controls
 | Button | Pin | Action |
